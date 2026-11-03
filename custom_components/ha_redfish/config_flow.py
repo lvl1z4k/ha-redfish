@@ -68,9 +68,11 @@ class RedfishConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await client.async_discover_endpoints()
                 system_info = await client.async_fetch_system()
-            except RedfishAuthError:
+            except RedfishAuthError as err:
+                _LOGGER.warning("Redfish auth failed for %s: %s", user_input[CONF_HOST], err)
                 errors["base"] = "invalid_auth"
-            except RedfishConnectionError:
+            except RedfishConnectionError as err:
+                _LOGGER.error("Redfish connection failed for %s: %s", user_input[CONF_HOST], err)
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected error during Redfish discovery")
@@ -79,10 +81,16 @@ class RedfishConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await client.async_logout()
 
             if not errors:
-                # Deduplicate by System UUID or SerialNumber
+                # Filter out all-zero UUIDs (e.g., 00000000-0000-0000-0000-000000000000)
+                raw_uuid = (system_info.get("UUID") or "").strip()
+                valid_uuid = (
+                    raw_uuid
+                    if raw_uuid and raw_uuid.replace("-", "").strip("0")
+                    else None
+                )
                 unique_id = (
-                    system_info.get("UUID")
-                    or system_info.get("SerialNumber")
+                    valid_uuid
+                    or (system_info.get("SerialNumber") or "").strip()
                     or user_input[CONF_HOST]
                 )
                 await self.async_set_unique_id(unique_id)

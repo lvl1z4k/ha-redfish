@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import ssl
 from typing import Any
 import aiohttp
+import contextlib
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +41,15 @@ class RedfishApiClient:
         self._username = username
         self._password = password
         self._verify_ssl = verify_ssl
+        if not verify_ssl:
+            ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+            with contextlib.suppress( ssl.SSLError ):
+                ssl_ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
+            self._ssl: ssl.SSLContext | bool = ssl_ctx
+        else:
+            self._ssl = True
         self._auth_lock = asyncio.Lock()
 
         self._auth_token: str | None = None
@@ -76,14 +87,14 @@ class RedfishApiClient:
             if self._auth_token or self._use_basic_auth:
                 return
 
-            session_url = f"{self._base_url}/redfish/v1/SessionService/Sessions"
+            session_url = f"{self._base_url}/redfish/v1/SessionService/Sessions/"
             payload = {"UserName": self._username, "Password": self._password}
 
             try:
                 async with self._session.post(
                     session_url,
                     json=payload,
-                    ssl=self._verify_ssl,
+                    ssl=self._ssl,
                     timeout=aiohttp.ClientTimeout(total=15),
                 ) as resp:
                     if resp.status in (200, 201):
@@ -115,7 +126,7 @@ class RedfishApiClient:
             async with self._session.delete(
                 url,
                 headers=headers,
-                ssl=self._verify_ssl,
+                ssl=self._ssl,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 _LOGGER.debug("[%s] Logged out Redfish session (HTTP %s)", self.host, resp.status)
@@ -152,7 +163,7 @@ class RedfishApiClient:
                 headers=headers,
                 auth=auth,
                 json=json_data,
-                ssl=self._verify_ssl,
+                ssl=self._ssl,
                 timeout=aiohttp.ClientTimeout(total=15),
             ) as resp:
                 if resp.status == 401 and retry_auth and not self._use_basic_auth:
@@ -201,7 +212,7 @@ class RedfishApiClient:
 
     async def async_discover_endpoints(self) -> None:
         """Discover standard DMTF collection members and both Legacy & Modern sub-resource URIs."""
-        root = await self.async_request("GET", "/redfish/v1")
+        root = await self.async_request("GET", "/redfish/v1/")
 
         # Check if BMC supports OData $expand
         expand_cfg = root.get("ProtocolFeaturesSupported", {}).get("ExpandQuery", {})
@@ -212,9 +223,18 @@ class RedfishApiClient:
         async def _first_member(key: str) -> str | None:
             if key not in root:
                 return None
-            col = await self.async_request("GET", root[key]["@odata.id"])
+            col_uri = root[key].get("@odata.id") or root.get("links", {}).get(key, {}).get("href")
+            if not col_uri:
+                return None
+            col = await self.async_request("GET", col_uri)
             members = col.get("Members", [])
-            return members[0]["@odata.id"] if members else None
+            if members and "@odata.id" in members[0]:
+                return members[0]["@odata.id"]
+            # Fallback for older iLO 4 REST/Redfish hybrid collections
+            link_members = col.get("links", {}).get("Member", [])
+            if link_members and "href" in link_members[0]:
+                return link_members[0]["href"]
+            return None
 
         self.system_uri, self.chassis_uri, self.manager_uri = await asyncio.gather(
             _first_member("Systems"),

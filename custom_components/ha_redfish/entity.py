@@ -24,9 +24,16 @@ class RedfishEntity(CoordinatorEntity[RedfishDataUpdateCoordinator]):
         system = coordinator.data.get(CAT_SYSTEM, {})
         manager = coordinator.data.get(CAT_INVENTORY, {}).get("manager", {})
 
+        raw_uuid = (system.get("UUID") or "").strip()
+        valid_uuid = (
+            raw_uuid
+            if raw_uuid and raw_uuid.replace("-", "").strip("0")
+            else None
+        )
+
         self._base_unique_id = (
-            system.get("UUID")
-            or system.get("SerialNumber")
+            valid_uuid
+            or (system.get("SerialNumber") or "").strip()
             or coordinator.entry.entry_id
         )
         self._attr_unique_id = f"{self._base_unique_id}_{unique_id_suffix}"
