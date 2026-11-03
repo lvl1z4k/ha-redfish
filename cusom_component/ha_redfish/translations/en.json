@@ -1,0 +1,39 @@
+// custom_components/ha_redfish/strings.json (Copy to translations/en.json)
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Redfish BMC",
+        "description": "Enter the connection credentials for your server BMC (HPE iLO, Dell iDRAC, Supermicro, Lenovo XClarity).",
+        "data": {
+          "host": "Host or IP Address",
+          "port": "HTTPS Port",
+          "username": "Username",
+          "password": "Password",
+          "verify_ssl": "Verify SSL Certificate"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Redfish endpoint. Verify host, port, and network reachability.",
+      "invalid_auth": "Invalid BMC username or password.",
+      "unknown": "Unexpected error occurred during Redfish discovery."
+    },
+    "abort": {
+      "already_configured": "This server BMC is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Telemetry Polling Intervals",
+        "description": "Configure independent polling frequencies (in seconds) for each Redfish sensor category.",
+        "data": {
+          "interval_system": "System State & Power Status Interval",
+          "interval_thermal_power": "Thermal, Fan & PSU Telemetry Interval",
+          "interval_inventory": "BMC Firmware & Hardware Inventory Interval"
+        }
+      }
+    }
+  }
+}

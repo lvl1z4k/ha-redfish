@@ -1,0 +1,13 @@
+// custom_components/ha_redfish/manifest.json
+{
+  "domain": "ha_redfish",
+  "name": "HA Redfish",
+  "codeowners": ["@lvl1z4k"],
+  "config_flow": true,
+  "documentation": "https://github.com/lvl1z4k/ha_redfish",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/lvl1z4k/ha-redfish/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
