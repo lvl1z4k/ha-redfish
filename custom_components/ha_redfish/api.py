@@ -45,8 +45,9 @@ class RedfishApiClient:
             ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             ssl_ctx.check_hostname = False
             ssl_ctx.verify_mode = ssl.CERT_NONE
-            with contextlib.suppress( ssl.SSLError ):
-                ssl_ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
+            with contextlib.suppress(ssl.SSLError):
+                # Drop OpenSSL 3 strictness to allow SHA-1 and 1024-bit RSA keys
+                ssl_ctx.set_ciphers("ALL:@SECLEVEL=0")
             self._ssl: ssl.SSLContext | bool = ssl_ctx
         else:
             self._ssl = True
