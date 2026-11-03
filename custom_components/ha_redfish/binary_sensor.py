@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CAT_SYSTEM, CAT_THERMAL_POWER, DOMAIN
+from .const import CAT_SYSTEM, CAT_THERMAL_POWER, DOMAIN, CAT_OEM
 from .coordinator import RedfishDataUpdateCoordinator
 from .entity import RedfishEntity
 from .sensor import ACTIVE_PSU_STATES, _get_member_key, _is_populated

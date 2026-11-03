@@ -24,7 +24,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CAT_INVENTORY, CAT_SYSTEM, CAT_THERMAL_POWER, DOMAIN
+from .const import CAT_INVENTORY, CAT_SYSTEM, CAT_THERMAL_POWER, DOMAIN, CAT_OEM
 from .coordinator import RedfishDataUpdateCoordinator
 from .entity import RedfishEntity
 
